@@ -6,7 +6,7 @@ Using replication agents to keep Primary and Secondary Author synced.
 
 - Load balancer routes all traffic to Left Author
 - Allow authoring on Left Author
-- Replicate all updates to Right Author with binaryless flag 
+- Replicate all updates to Right Author with binaryless flag
 
 ```mermaid  
 flowchart TD  
@@ -44,6 +44,15 @@ flowchart TD
 	AL -- Replication --> AR
 
 ```
+
+### To Upgrade Right Side and Switch Over
+
+On Left:
+- You can pause replication from Left Author to Right `/etc/replication/agents.authorleft/replicateright` while you perform upgrades on Right Author. Once finished you can resume replication, wait for it to finish replicating.
+- Enable replication "Right to Left Author" `/etc/replication/agents.authorright` this will be replicated to Right author.
+- Disable replication "Left Author to Right" `/etc/replication/agents.authorleft/replicateright`.
+- Flip load balancer from Left top Right.
+
 
 
 
@@ -91,7 +100,16 @@ flowchart TD
 	LB -- Disabled --x AL
 	AR -- Replication --> AL
 ```
- 
+
+### To Upgrade Right Side and Switch Over
+
+On Right
+- Pause replication from "Right to Left Author" `/etc/replication/agents.authorright` while you perform upgrades on Left Author. Once finished upgrades to Left Author you can resume replication, wait for it to finish replicating.
+- Enable  replication "Left Author to Right" `/etc/replication/agents.authorleft/replicateright`  this will be replicated to Right author.
+- Disable replication "Right to Left Author" `/etc/replication/agents.authorright`.
+- Flip load balancer from Right to Left.
+
+
 ## Start up Setup
 
 To be able to replicate freely between authors we need to make sure they use same encryption key. 
