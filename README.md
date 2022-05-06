@@ -110,7 +110,7 @@ On Right
 - Flip load balancer from Right to Left.
 
 
-## Start up Setup
+## Start up process
 
 To be able to replicate freely between authors we need to make sure they use same encryption key. 
 Lets ensure any secrets on both authors are encrypted with the same key.
