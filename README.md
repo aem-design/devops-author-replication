@@ -4,6 +4,7 @@ Using replication agents to keep Primary and Secondary Author synced.
 
 ## Left Side Active
 
+- Load balancer routes all traffic to Left Author
 - Allow authoring on Left Author
 - Replicate all updates to Right Author with binaryless flag 
 
@@ -48,6 +49,7 @@ flowchart TD
 
 ## Right Side Active
 
+- Load balancer routes all traffic to Right Author
 - Allow authoring on Right Author
 - Replicate all updates to Left Author with binaryless flag
 
