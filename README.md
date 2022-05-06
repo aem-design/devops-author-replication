@@ -149,5 +149,7 @@ docker compose up author-right-webdav
 
     Replication agents are activated by run-modes, each author has its own run-mode, this ensures you can have separate replication agents that will not activate when replicated.
 
-     - Agents on Author Left (runmode: authorleft) Replication http://author-left.localhost/miscadmin#/etc/replication/agents.authorleft
+     - Agents on Author Left (runmode: authorleft) http://author-left.localhost/miscadmin#/etc/replication/agents.authorleft
+       - this agent will only be activate on Author that has a run mode "authorleft" even if its marked as Enabled.
      - Agents on Author Right (runmode: authorright) http://author-left.localhost/miscadmin#/etc/replication/agents.authorright
+       - this agent will only be activate on Author that has a run mode "authorright" even if its marked as Enabled.
