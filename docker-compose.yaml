@@ -2,98 +2,95 @@ version: "3.9"
 
 services:
 
-  author:
+  author-left:
     image: aemdesign/aem:6.5.11.0-jdk11
-    hostname: author
+    hostname: author-left
     healthcheck:
-      test: curl -u admin:admin --header Referer:localhost --silent --connect-timeout 5 --max-time 5 localhost:8080//system/console/bundles.json | grep -q \"state\":\"Installed\" && exit 1 || exit 0
+      test: curl -u admin:admin --header Referer:localhost --silent --connect-timeout 5 --max-time 5 http://localhost:8080/system/console/bundles.json | grep -q \"state\":\"Installed\" && exit 1 || exit 0
       interval: 10s
       timeout: 10s
-      retries: 20
-      start_period: 1s
-    ports:
-      - 4502:8080
-      - 30303:58242
+      retries: 200
+      start_period: 60s
     environment:
-      - AEM_RUNMODE=-Dsling.run.modes=author,crx3,crx3tar,localdev,nosamplecontent
+      - AEM_RUNMODE=-Dsling.run.modes=author,crx3,crx3tar,localdev,nosamplecontent,authorleft
       - AEM_JVM_OPTS=-server -Xms248m -Xmx1524m -XX:MaxDirectMemorySize=256M -XX:+CMSClassUnloadingEnabled -Djava.awt.headless=true -Dorg.apache.felix.http.host=0.0.0.0 -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=58242,suspend=n
     volumes:
-      - author-data:/aem/crx-quickstart/repository
+      - author-left-data-blobids:/aem/crx-quickstart/repository/blobids
+      - author-data-datastore:/aem/crx-quickstart/repository/datastore
+      - author-left-data-index:/aem/crx-quickstart/repository/index
+      - author-left-data-segmentstore:/aem/crx-quickstart/repository/segmentstore
+      - author-data-key:/aem/key
+      - ./packages/agents.zip:/aem/crx-quickstart/install/99-agents.zip
     labels:
       # note that you want this frontened to match the last. otherwise it will match login.${HOST_DOMAIN}"
       traefik.frontend.priority: 1
       traefik.enable: true
-      traefik.http.routers.author.rule: "Host(`author.localhost`)"
-      traefik.http.routers.author.entrypoints: web
-      traefik.http.routers.author_https.rule: "Host(`author.localhost`)"
-      traefik.http.routers.author_https.tls: true
-      traefik.http.routers.author_https.entrypoints: websecure
-      traefik.http.services.author.loadbalancer.passHostHeader: true
+      traefik.http.routers.author_left.rule: "Host(`author-left.localhost`)"
+      traefik.http.routers.author_left.entrypoints: web
+      traefik.http.routers.author_left_https.rule: "Host(`author-left.localhost`)"
+      traefik.http.routers.author_left_https.tls: true
+      traefik.http.routers.author_left_https.entrypoints: websecure
+      traefik.http.services.author_left.loadbalancer.passHostHeader: true
     networks:
       - default
       - author-network
       - publish-network
       - dispatcher-network
 
-  publish:
+  author-left-webdav:
+    image: aemdesign/java-buildpack:jdk11
+    command: curl -u admin:admin -H User-Agent:curl -F "jcr:primaryType=sling:OsgiConfig" -F "alias=/crx/server" -F "dav.create-absolute-uri=true" -F "dav.create-absolute-uri@TypeHint=Boolean" -F"../../jcr:primaryType=sling:Folder" -F"../jcr:primaryType=sling:Folder" http://author-left:8080/apps/system/config/org.apache.sling.jcr.davex.impl.servlets.SlingDavExServlet
+    depends_on:
+      author-left:
+        condition: service_healthy
+    networks:
+      - default
+      - author-network
+
+  author-right:
     image: aemdesign/aem:6.5.11.0-jdk11
-    hostname: publish
+    hostname: author-right
     healthcheck:
-      test: curl -u admin:admin --header Referer:localhost --silent --connect-timeout 5 --max-time 5 localhost:8080//system/console/bundles.json | grep -q \"state\":\"Installed\" && exit 1 || exit 0
+      test: curl -u admin:admin --header Referer:localhost --silent --connect-timeout 5 --max-time 5 http://localhost:8080/system/console/bundles.json | grep -q \"state\":\"Installed\" && exit 1 || exit 0
       interval: 10s
       timeout: 10s
-      retries: 20
-      start_period: 30s
-    ports:
-      - 4503:8080
-      - 30304:58242
+      retries: 200
+      start_period: 60s
     environment:
-      - AEM_RUNMODE=-Dsling.run.modes=publish,crx3,crx3tar,localdev,nosamplecontent
+      - AEM_RUNMODE=-Dsling.run.modes=author,crx3,crx3tar,localdev,nosamplecontent,authorright
       - AEM_JVM_OPTS=-server -Xms248m -Xmx1524m -XX:MaxDirectMemorySize=256M -XX:+CMSClassUnloadingEnabled -Djava.awt.headless=true -Dorg.apache.felix.http.host=0.0.0.0 -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=58242,suspend=n
+    volumes:
+      - author-right-data-blobids:/aem/crx-quickstart/repository/blobids
+      - author-data-datastore:/aem/crx-quickstart/repository/datastore
+      - author-right-data-index:/aem/crx-quickstart/repository/index
+      - author-right-data-segmentstore:/aem/crx-quickstart/repository/segmentstore
+      - author-data-key:/aem/key
+      - ./packages/agents.zip:/aem/crx-quickstart/install/99-agents.zip
     labels:
       # note that you want this frontened to match the last. otherwise it will match login.${HOST_DOMAIN}"
       traefik.frontend.priority: 1
       traefik.enable: true
-      traefik.http.routers.publish.rule: "Host(`publish.localhost`)"
-      traefik.http.routers.publish.entrypoints: web
-      traefik.http.routers.publish_https.rule: "Host(`publish.localhost`)"
-      traefik.http.routers.publish_https.tls: true
-      traefik.http.routers.publish_https.entrypoints: websecure
-      traefik.http.services.publish.loadbalancer.passHostHeader: true
-    volumes:
-      - publish-data:/aem/crx-quickstart/repository
+      traefik.http.routers.author_right.rule: "Host(`author-right.localhost`)"
+      traefik.http.routers.author_right.entrypoints: web
+      traefik.http.routers.author_right_https.rule: "Host(`author-right.localhost`)"
+      traefik.http.routers.author_right_https.tls: true
+      traefik.http.routers.author_right_https.entrypoints: websecure
+      traefik.http.services.author_right.loadbalancer.passHostHeader: true
     networks:
       - default
+      - author-network
       - publish-network
+      - dispatcher-network
 
-  dispatcher:
-    image: aemdesign/dispatcher
-    hostname: dispatcher
-    ports:
-      - 9080:8080
-      - 9433:8433
-    environment:
-      - RENDERER_PORT=4503
-      - RENDERER_HOST=publish
-      - DISPATCHER_CONFIG=publish
-    links:
-      - publish
-      - author
-    labels:
-      # note that you want this frontened to match the last. otherwise it will match login.${HOST_DOMAIN}"
-      traefik.frontend.priority: 1
-      traefik.enable: true
-      traefik.http.routers.dispatcher.rule: "Host(`dispatcher.localhost`)"
-      traefik.http.routers.dispatcher.entrypoints: web
-      traefik.http.routers.dispatcher_https.rule: "Host(`dispatcher.localhost`)"
-      traefik.http.routers.dispatcher_https.tls: true
-      traefik.http.routers.dispatcher_https.entrypoints: websecure
-      traefik.http.services.dispatcher.loadbalancer.passHostHeader: true
-    volumes:
-      - dispatcher-data:/data/httpd/cache
+  author-right-webdav:
+    image: aemdesign/java-buildpack:jdk11
+    command: curl -u admin:admin -H User-Agent:curl -F "jcr:primaryType=sling:OsgiConfig" -F "alias=/crx/server" -F "dav.create-absolute-uri=true" -F "dav.create-absolute-uri@TypeHint=Boolean" -F"../../jcr:primaryType=sling:Folder" -F"../jcr:primaryType=sling:Folder" http://author-right:8080/apps/system/config/org.apache.sling.jcr.davex.impl.servlets.SlingDavExServlet
+    depends_on:
+      author-right:
+        condition: service_healthy
     networks:
       - default
-      - dispatcher-network
+      - author-network
 
   traefik:
     image: traefik
@@ -160,7 +157,7 @@ services:
     command:
       - /bin/sh
       - -c
-      - "test ! -f mkcert.key && mkcert -install && mkcert -key-file mkcert.key -cert-file mkcert.pem -client author.localhost publish.localhost dispatcher.localhost localhost 127.0.0.1 ::1"
+      - "test ! -f mkcert.key && mkcert -install && mkcert -key-file mkcert.key -cert-file mkcert.pem -client author.localhost publish.localhost dispatcher.localhost localhost 127.0.0.1 ::1 author-left.localhost author-right.localhost"
     volumes:
       - ./services/traefik/certs:/root/.local/share/mkcert
 
@@ -187,6 +184,18 @@ networks:
   dispatcher-network:
 
 volumes:
-  author-data:
+  # shared volume for moving hmac key to aem instances
+  author-data-key:
+  author-data-datastore:
+  author-left-data:
+  author-left-data-blobids:
+  author-left-data-datastore:
+  author-left-data-index:
+  author-left-data-segmentstore:
+  author-right-data:
+  author-right-data-blobids:
+  author-right-data-datastore:
+  author-right-data-index:
+  author-right-data-segmentstore:
   publish-data:
   dispatcher-data:
